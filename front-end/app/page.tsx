@@ -75,6 +75,7 @@ const SpotifyAccount = () => {
         }
 
         setPlaylists(list);
+        console.log(list);
       } catch (err) {
         console.log(err);
       }
