@@ -1,3 +1,10 @@
 # BoilerMake XII
 
-woohoo
+FILE STRUCTURE
+----------
+BACKEND 
+- /DjangoProject
+- /backend
+
+FRONTEND
+- /frontend
