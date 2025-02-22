@@ -1,9 +1,10 @@
 # BoilerMake XII
 
 FILE STRUCTURE
-BACKEND -
-/DjangoProject
-/backend
+----------
+BACKEND 
+- /DjangoProject
+- /backend
 
-FRONTEND -
-/frontend
+FRONTEND
+- /frontend
