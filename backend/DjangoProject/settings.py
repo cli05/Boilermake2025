@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    'ml.apps.MLConfig',
 ]
 
 MIDDLEWARE = [
@@ -137,4 +138,6 @@ SPOTIFY = {
     'REDIRECT_URI': os.getenv('SPOTIFY_REDIRECT_URI'),
     'SCOPES': 'playlist-read-private playlist-modify-public',
 }
+
+# ZERO_SHOT_LABELS = ["positive", "negative", "neutral"] # CALEB LI CHANGE HERE
 # pip install django-cors-headers
