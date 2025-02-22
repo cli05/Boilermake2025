@@ -2,7 +2,7 @@
 
 const CLIENT_ID = "1d0be52da5a343149b498d6a51d4f6fe";
 const REDIRECT_URI = "http://localhost:3000";
-const SCOPE = "user-read-private user-read-email";
+const SCOPE = "user-read-private user-read-email playlist-read-private";
 
 const VERIFIER_LEN = 128;
 
