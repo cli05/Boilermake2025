@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-import os
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -131,10 +131,5 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-SPOTIFY = {
-    'CLIENT_ID': os.getenv('SPOTIFY_CLIENT_ID'),
-    'CLIENT_SECRET': os.getenv('SPOTIFY_CLIENT_SECRET'),
-    'REDIRECT_URI': os.getenv('SPOTIFY_REDIRECT_URI'),
-    'SCOPES': 'playlist-read-private playlist-modify-public',
-}
+
 # pip install django-cors-headers
