@@ -22,13 +22,14 @@ const SpotifyAccount = () => {
   interface Playlist {
     name: string;
     song_count: number;
+    api_endpoint: string;
   };
 
   const [params, setParams] = useSearchParams();
-  const [token, setToken] = useState<string>("");
+  const [token, setToken] = useState<string>();
   
-  const [username, setUsername] = useState<string>("");
-  const [playlists, setPlaylists] = useState<Array<Playlist>>({});
+  const [username, setUsername] = useState<string>();
+  const [playlists, setPlaylists] = useState<Array<Playlist>>();
 
   const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -66,7 +67,11 @@ const SpotifyAccount = () => {
         let list = [];
 
         for (let i = 0; i < items.length; i++) {
-          list.push({name: items[i].name, song_count: items[i].tracks.total});
+          list.push({
+            name: items[i].name,
+            song_count: items[i].tracks.total,
+            api_endpoint: items[i].tracks.href,
+          });
         }
 
         setPlaylists(list);
@@ -92,7 +97,7 @@ const SpotifyAccount = () => {
 
             return (
               <div key={index}>
-                <RadioGroupItem value={option} id={option} />
+                <RadioGroupItem value={item.api_endpoint} id={option} />
                 <Label htmlFor={option}>{item.name} ({item.song_count} songs)</Label>
               </div>
             );
@@ -123,7 +128,7 @@ const MainPage = () => {
   return (
     <BrowserRouter>
       <div className="flex flex-col m-auto w-2xl">
-        <h1 className="font-black text-7xl text-center">Playlist Curator</h1>
+        <h1 className="font-black text-2xl text-center">Playlist Curator</h1>
         <SpotifyAccount />
         <Input placeholder="happy"
                name="description"
