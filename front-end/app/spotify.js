@@ -76,7 +76,7 @@ export const requestToken = async (code) => {
     },
     body: new URLSearchParams({
       client_id: CLIENT_ID,
-      grant_type: 'authorization_code',
+      grant_type: "authorization_code",
       code: code,
       redirect_uri: REDIRECT_URI,
       code_verifier: verifier,
