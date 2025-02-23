@@ -16,8 +16,7 @@ class MLConfig(AppConfig):
                 device = 0 if torch.cuda.is_available() else -1
 
                 # Initialize pipeline
-                # settings.ZERO_SHOT_PIPELINE
-                self.classifier = pipeline(
+                settings.ZERO_SHOT_PIPELINE = pipeline(
                     task="zero-shot-classification",
                     model="MoritzLaurer/deberta-v3-large-zeroshot-v2.0",
                     device=device

@@ -400,12 +400,15 @@ const Program = () => {
 
     try {
       const response = await axios.post("http://localhost:8000/api/classify/", classifyData);
-      console.log(response);
+
+      if (!response.tracks) {
+        alert("No matches were found. Modify your description and try again.");
+      }
+
+      setRawSongs(response.tracks)
     } catch (err) {
       console.error(err);
     }
-
-    setRawSongs(tracks)
   }
 
   const sendCreateRequest = async (data) => {
