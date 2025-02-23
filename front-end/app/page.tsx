@@ -97,7 +97,7 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
                 <div key={index} className="flex items-center space-x-2 text-white">
                   <RadioGroupItem value={index} id={optionId} className="border-white text-white" />
                   <Label htmlFor={optionId} className="cursor-pointer">
-                    {item.name} <span className="text-gray-400">({item.song_count} songs) </span>
+                    {item.name} <span className="text-gray-400">({item.song_count} songs)</span>
                   </Label>
                 </div>
               )
@@ -393,9 +393,17 @@ const Program = () => {
       console.error(err)
     }
 
-    console.log("submit")
+    const classifyData = {
+      text: data.description,
+      song_list: tracks,
+    };
 
-    // api call to back end
+    try {
+      const response = await axios.post("http://localhost:8000/api/classify/", classifyData);
+      console.log(response);
+    } catch (err) {
+      console.error(err);
+    }
 
     setRawSongs(tracks)
   }
@@ -439,17 +447,24 @@ const Program = () => {
   }
 
   return (
-    <div className="min-h-screen bg-black text-white p-8 flex flex-col items-center justify-center">
-      <Heading />
-
+    <div className={`min-h-screen bg-black text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
       {accessToken ? (
-        <div className="w-full max-w-md">
-          {!showEditor && <InputForm onLoginAttempt={loginHandler} onSubmit={sendExtractRequest} token={accessToken} />}
+        <div>
+          <Heading />
+          
+          { !showEditor && <InputForm onLoginAttempt={loginHandler}
+                                      onSubmit={sendExtractRequest}
+                                      token={accessToken} /> }
 
-          {showEditor && <Editor onSubmit={sendCreateRequest} onCancel={showInputForm} tracks={cookedSongs} />}
+          { showEditor && <Editor onSubmit={sendCreateRequest}
+                                  onCancel={showInputForm}
+                                  tracks={cookedSongs} /> }
         </div>
       ) : (
-        <SpotifyAccount onLoginAttempt={loginHandler} onValueChange={() => {}} token={null} />
+        <div className="text-center">
+          <Heading />
+          <SpotifyAccount onLoginAttempt={loginHandler} onValueChange={() => {}} token={null} />
+        </div>
       )}
     </div>
   )
@@ -466,4 +481,7 @@ const MainPage = () => {
 } /* MainPage() */
 
 export default MainPage
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7aa3d42 (8 hours to go)
