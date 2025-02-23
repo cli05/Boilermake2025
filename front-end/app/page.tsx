@@ -8,7 +8,7 @@ import axios from "axios";
 // shadcn/ui imports
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Input } from "@/components/ui/input";
 
 // lucide-react icon miports
@@ -20,6 +20,9 @@ import "@/app/globals.css";
 
 const PROFILE_URL = "https://api.spotify.com/v1/me";
 const GET_PLAYLISTS_URL = "https://api.spotify.com/v1/me/playlists";
+const GET_TRACKS_URL = "https://api.spotify.com/v1/tracks";
+const CREATE_PLAYLIST_URL = "https://api.spotify.com/v1/users/{user_id}/playlists";
+const ADD_TO_PLAYLIST_URL = "https://api.spotify.com/v1/playlists/{playlist_id}/tracks";
 
 const MAX_DESC_LEN = 50;
 
@@ -72,22 +75,22 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
       }
     };
 
-    if (token) {
+    if (token && !username) {
       fetchProfile();
     }
-  }, [token]);
+  }, [token, username]);
 
   if (showPlaylists) {
     return (
       <div>
         <p>Signed in as {username}</p>
-        <RadioGroup onValueChange={(value) => onValueChange(value)}>
+        <RadioGroup onValueChange={(value) => onValueChange(playlists[value])}>
           {playlists.map((item, index) => {
             const optionId = "playlist" + index;
 
             return (
               <div key={index}>
-                <RadioGroupItem value={item.api_endpoint} id={optionId} />
+                <RadioGroupItem value={index} id={optionId} />
                 <Label htmlFor={optionId}>{item.name} ({item.song_count} songs)</Label>
               </div>
             );
@@ -110,11 +113,13 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
 }; /* SpotifyAccount() */
 
 const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
-  const [playlist, setPlaylist] = useState<string>();
+  const [playlistName, setPlaylistName] = useState<string>();
+  const [playlistAPI, setPlaylistAPI] = useState<string>();
   const [description, setDescription] = useState<string>();
 
   const updatePlaylist = (value) => {
-    setPlaylist(value);
+    setPlaylistName(value.name);
+    setPlaylistAPI(value.api_endpoint);
   };
 
   const updateDescription = (event) => {
@@ -122,7 +127,7 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   };
 
   const extractButtonHandler = (event) => {
-    if (!playlist || !description) {
+    if (!playlistName || !description) {
       console.log("All fields are required");
       return;
     }
@@ -132,7 +137,12 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
       return;
     }
 
-    const data = { playlist, description };
+    const data = {
+      playlistName: playlistName,
+      playlistAPI: playlistAPI,
+      description: description,
+    };
+
     onSubmit(data);
   };
 
@@ -153,21 +163,92 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   );
 }; /* InputForm() */
 
-const Editor = () => {
-  return (<div>what</div>);
+const Editor = ({ onSubmit, onCancel, tracks }) => {
+  const [playlistName, setPlaylistName] = useState<string>("My Playlist");
+  const [trackList, setTrackList] = useState<Array<string>>();
+
+  useEffect(() => {
+    setTrackList(tracks);
+  }, [tracks]);
+
+  const removeTrack = (trackId) => {
+    setTrackList(trackList.filter((item) => item.track_id !== trackId));
+  };
+
+  const createButtonHandler = (event) => {
+    if (!playlistName) {
+      console.log("Playlist name cannot be empty.");
+      return;
+    }
+
+    const trackURIs = [];
+
+    for (let track of trackList) {
+      trackURIs.push(`spotify:track:${track.track_id}`);
+    }
+
+    const data = {
+      name: playlistName,
+      trackURIs: trackURIs,
+    };
+    console.log(data);
+
+    onSubmit(data);
+  };
+
+  if (!trackList) {
+    return <div>Loading...</div>;
+  }
+
+  if (trackList.length == 0) {
+    // do stuff
+  }
+
+  return (
+    <div>
+      {trackList.map((item, index) => (
+        <div key={index}>
+          <div>
+            <p>{item.title}</p>
+            <p>{item.artist} | {item.album}</p>
+          </div>
+          <Button onClick={(event) => removeTrack(item.track_id)}>Remove</Button>
+        </div>
+      ))}
+
+      <Label htmlFor="playlist-name">Name your playlist:</Label>
+      <Input id="playlist-name"
+             name="playlist-name"
+             defaultValue="My Playlist" 
+             onChange={(e) => setPlaylistName(e.target.value)} />
+      <Button onClick={createButtonHandler}>Create Playlist</Button>
+      <Button onClick={onCancel}>Cancel</Button>
+    </div>
+  );
 }; /* Editor() */
 
 const Program = () => {
+  interface Song {
+    track_id: string;
+    title: string;
+    artist: string;
+    album: string;
+  };
+
   const [params, setParams] = useSearchParams();
   
   const [accessToken, setAccessToken] = useState<string>();
   const [refreshToken, setRefreshToken] = useState<string>();
 
-  const [showEditor, setShowEditor] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>();
 
-  const loginHandler = async () => {
-    window.location.href = await getSpotifyAuthLink();
-  };
+  const [playlistName, setPlaylistName] = useState<string>();
+  const [description, setDescription] = useState<string>();
+
+  const [rawSongs, setRawSongs] = useState<Array<string>>();
+  const [cookedSongs, setCookedSongs] = useState<Array<Song>>();
+
+  const [showEditor, setShowEditor] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -183,12 +264,82 @@ const Program = () => {
     fetchToken();
   }, []);
 
+  useEffect(() => {
+    const getSongData = async () => {
+      if (!rawSongs) {
+        return;
+      }
+
+      const allTrackIds = rawSongs.join();
+
+      const payload = {
+        headers: {Authorization: `Bearer ${accessToken}`},
+        params: {ids: allTrackIds},
+      };
+
+      try {
+        const response = await axios.get(GET_TRACKS_URL, payload);
+        const tracks = [];
+
+        for (let item of response.data.tracks) {
+          const artists = [];
+
+          for (let artist of item.artists) {
+            artists.push(artist.name);
+          }
+
+          tracks.push({
+            track_id: item.id,
+            title: item.name,
+            artist: artists.join(", "),
+            album: item.album.name,
+          });
+        }
+
+        setCookedSongs(tracks);
+        setShowEditor(true);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    getSongData();
+  }, [rawSongs]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const payload = {headers: {Authorization: `Bearer ${accessToken}`}};
+
+      try {
+        const response = await axios.get(PROFILE_URL, payload);
+        setUserId(response.data.id);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (accessToken && !userId) {
+      fetchUserId();
+    }
+  }, [accessToken, userId]);
+
+  const loginHandler = async () => {
+    window.location.href = await getSpotifyAuthLink();
+  };
+
+  const showInputForm = () => {
+    setShowEditor(false);
+  };
+
   const sendExtractRequest = async (data) => {
+    setPlaylistName(data.playlistName);
+    setDescription(data.description);
+
     const payload = {headers: {Authorization: `Bearer ${accessToken}`}};
+    const tracks = [];
 
     try {
-      const response = await axios.get(data.playlist, payload);
-      const tracks = [];
+      const response = await axios.get(data.playlistAPI, payload);
 
       for (let item of response.data.items) {
         tracks.push(item.track.id);
@@ -198,6 +349,48 @@ const Program = () => {
     }
 
     console.log("submit");
+    
+    // api call to back end
+
+    setRawSongs(tracks);
+  };
+
+  const sendCreateRequest = async (data) => {
+    const headers = {headers: {Authorization: `Bearer ${accessToken}`}};
+
+    const createPlaylistURL = CREATE_PLAYLIST_URL.replace("{user_id}", userId);
+    const createData = {
+      name: data.name,
+      description: `Collection of songs in ${playlistName} that are ${description}, carefully chosen by Playlist Curator.`,
+    };
+
+    try {
+      const createResponse = await axios.post(createPlaylistURL, createData, headers);
+      
+      let newPlaylistId = "";
+      let newPlaylistLink = "";
+      
+      if (createResponse.status == 201) {
+        const playlistResponse = await axios.get(createResponse.data.href, headers);
+
+        newPlaylistId = playlistResponse.data.id;
+        newPlaylistLink = playlistResponse.data.external_urls.spotify;
+      }
+      
+      const addToPlaylistURL = ADD_TO_PLAYLIST_URL.replace("{playlist_id}", newPlaylistId);
+      const addToData = {
+        uris: data.trackURIs,
+      };
+
+      const addResponse = await axios.post(addToPlaylistURL, addToData, headers);
+
+      if (addResponse.status == 201) {
+        alert("Playlist was successfully saved!");
+        window.location.href = newPlaylistLink;
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -207,7 +400,10 @@ const Program = () => {
       { !showEditor && <InputForm onLoginAttempt={loginHandler}
                                   onSubmit={sendExtractRequest}
                                   token={accessToken} /> }
-      { showEditor && <Editor /> }
+
+      { showEditor && <Editor onSubmit={sendCreateRequest}
+                              onCancel={showInputForm}
+                              tracks={cookedSongs} /> }
     </div>
   );
 }; /* Program() */
