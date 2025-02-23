@@ -27,7 +27,7 @@ def classify_text(request):
         return Response({"error": str(e)}, status=500)
 
 def generate_zsc_output(prompt):
-    classes_verbalized = list(settings.ZERO_SHOT_LABELS)
+    classes_verbalized = settings.ZERO_SHOT_LABELS
     zeroshot_classifier = settings.ZERO_SHOT_PIPELINE
     print(classes_verbalized, zeroshot_classifier)
     try:
@@ -53,9 +53,12 @@ def generate_subplaylist(prompt, playlist):
 
         print('checkpoint 3', song_id)
         for label in use_labels:
+            print('checkpoint 4')
             label_val = settings.KV_LABELS[label]
+            print('checkpoint 5', label_val)
             if label_val is None:
-                gen_list = row[col].iloc[0].split(",")
+                print("label_val is none!")
+                gen_list = row['track_genre'].iloc[0].split(",")
                 found = False
                 for gen in gen_list:
                     if gen == label:
@@ -64,12 +67,18 @@ def generate_subplaylist(prompt, playlist):
                             final_playlist.append(song_id)
                         break
                 if found:
+                    print('found')
                     break
             else:
+                print('entered else statement')
                 ind = settings.ZERO_SHOT_LABELS.index(label)
+                print('checkpoint 6')
                 col = settings.FEATURES[ind // 3]
+                print('checkpoint 7')
                 min = label_val[0]
+                print('checkpoint 8')
                 max = label_val[1]
+                print('checkpoint 9')
                 if row[col].iloc[0] <= max and row[col].iloc[0] >= min:
                     if song_id not in final_playlist:
                         final_playlist.append(song_id)
