@@ -22,8 +22,11 @@ import { CircleUserRound } from "lucide-react"
 import { getSpotifyAuthLink, requestToken } from "@/app/spotify.js"
 import "@/app/globals.css"
 
-const PROFILE_URL = "https://api.spotify.com/v1/me"
-const GET_PLAYLISTS_URL = "https://api.spotify.com/v1/me/playlists"
+const PROFILE_URL = "https://api.spotify.com/v1/me";
+const GET_PLAYLISTS_URL = "https://api.spotify.com/v1/me/playlists";
+const GET_TRACKS_URL = "https://api.spotify.com/v1/tracks";
+const CREATE_PLAYLIST_URL = "https://api.spotify.com/v1/users/{user_id}/playlists";
+const ADD_TO_PLAYLIST_URL = "https://api.spotify.com/v1/playlists/{playlist_id}/tracks";
 
 const MAX_DESC_LEN = 50
 
@@ -76,30 +79,30 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
       }
     }
 
-    if (token) {
-      fetchProfile()
+    if (token && !username) {
+      fetchProfile();
     }
-  }, [token])
+  }, [token, username]);
 
   if (showPlaylists) {
     return (
       <div className="bg-gray-900 p-6 rounded-lg shadow-lg max-w-md mx-auto">
         <p className="text-green-500 mb-4">
-          Signed in as <span className="font-bold">{username}</span>
+          Signed in as {username}
         </p>
         <ScrollArea className="h-60 w-full">
-          <RadioGroup onValueChange={(value) => onValueChange(value)} className="space-y-2">
+          <RadioGroup onValueChange={(value) => onValueChange(playlists[value])} className="space-y-2">
             {playlists.map((item, index) => {
-              const optionId = "playlist" + index
+              const optionId = "playlist" + index;
 
               return (
                 <div key={index} className="flex items-center space-x-2 text-white">
-                  <RadioGroupItem value={item.api_endpoint} id={optionId} className="border-white text-white" />
+                  <RadioGroupItem value={index} id={optionId} className="border-white text-white" />
                   <Label htmlFor={optionId} className="cursor-pointer">
-                    {item.name} <span className="text-gray-400">({item.song_count} songs)</span>
+                    {item.name} <span className="text-gray-400">({item.song_count} songs)
                   </Label>
                 </div>
-              )
+              );
             })}
           </RadioGroup>
         </ScrollArea>
@@ -122,21 +125,23 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
 } /* SpotifyAccount() */
 
 const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
-  const [playlist, setPlaylist] = useState<string>()
-  const [description, setDescription] = useState<string>()
+  const [playlistName, setPlaylistName] = useState<string>();
+  const [playlistAPI, setPlaylistAPI] = useState<string>();
+  const [description, setDescription] = useState<string>();
 
   const updatePlaylist = (value) => {
-    setPlaylist(value)
-  }
+    setPlaylistName(value.name);
+    setPlaylistAPI(value.api_endpoint);
+  };
 
   const updateDescription = (event) => {
     setDescription(event.target.value)
   }
 
   const extractButtonHandler = (event) => {
-    if (!playlist || !description) {
-      console.log("All fields are required")
-      return
+    if (!playlistName || !description) {
+      console.log("All fields are required");
+      return;
     }
 
     if (description.length > MAX_DESC_LEN) {
@@ -144,9 +149,14 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
       return
     }
 
-    const data = { playlist, description }
-    onSubmit(data)
-  }
+    const data = {
+      playlistName: playlistName,
+      playlistAPI: playlistAPI,
+      description: description,
+    };
+
+    onSubmit(data);
+  };
 
   return (
     <div className="space-y-6 max-w-md mx-auto">
@@ -175,21 +185,92 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   )
 } /* InputForm() */
 
-const Editor = () => {
-  return <div>what</div>
-} /* Editor() */
+const Editor = ({ onSubmit, onCancel, tracks }) => {
+  const [playlistName, setPlaylistName] = useState<string>("My Playlist");
+  const [trackList, setTrackList] = useState<Array<string>>();
+
+  useEffect(() => {
+    setTrackList(tracks);
+  }, [tracks]);
+
+  const removeTrack = (trackId) => {
+    setTrackList(trackList.filter((item) => item.track_id !== trackId));
+  };
+
+  const createButtonHandler = (event) => {
+    if (!playlistName) {
+      console.log("Playlist name cannot be empty.");
+      return;
+    }
+
+    const trackURIs = [];
+
+    for (let track of trackList) {
+      trackURIs.push(`spotify:track:${track.track_id}`);
+    }
+
+    const data = {
+      name: playlistName,
+      trackURIs: trackURIs,
+    };
+    console.log(data);
+
+    onSubmit(data);
+  };
+
+  if (!trackList) {
+    return <div>Loading...</div>;
+  }
+
+  if (trackList.length == 0) {
+    // do stuff
+  }
+
+  return (
+    <div>
+      {trackList.map((item, index) => (
+        <div key={index}>
+          <div>
+            <p>{item.title}</p>
+            <p>{item.artist} | {item.album}</p>
+          </div>
+          <Button onClick={(event) => removeTrack(item.track_id)}>Remove</Button>
+        </div>
+      ))}
+
+      <Label htmlFor="playlist-name">Name your playlist:</Label>
+      <Input id="playlist-name"
+             name="playlist-name"
+             defaultValue="My Playlist" 
+             onChange={(e) => setPlaylistName(e.target.value)} />
+      <Button onClick={createButtonHandler}>Create Playlist</Button>
+      <Button onClick={onCancel}>Cancel</Button>
+    </div>
+  );
+}; /* Editor() */
 
 const Program = () => {
-  const [params, setParams] = useSearchParams()
+  interface Song {
+    track_id: string;
+    title: string;
+    artist: string;
+    album: string;
+  };
 
-  const [accessToken, setAccessToken] = useState<string>()
-  const [refreshToken, setRefreshToken] = useState<string>()
+  const [params, setParams] = useSearchParams();
+  
+  const [accessToken, setAccessToken] = useState<string>();
+  const [refreshToken, setRefreshToken] = useState<string>();
 
-  const [showEditor, setShowEditor] = useState<boolean>(false)
+  const [userId, setUserId] = useState<string>();
 
-  const loginHandler = async () => {
-    window.location.href = await getSpotifyAuthLink()
-  }
+  const [playlistName, setPlaylistName] = useState<string>();
+  const [description, setDescription] = useState<string>();
+
+  const [rawSongs, setRawSongs] = useState<Array<string>>();
+  const [cookedSongs, setCookedSongs] = useState<Array<Song>>();
+
+  const [showEditor, setShowEditor] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchToken = async () => {
@@ -205,12 +286,82 @@ const Program = () => {
     fetchToken()
   }, [params])
 
+  useEffect(() => {
+    const getSongData = async () => {
+      if (!rawSongs) {
+        return;
+      }
+
+      const allTrackIds = rawSongs.join();
+
+      const payload = {
+        headers: {Authorization: `Bearer ${accessToken}`},
+        params: {ids: allTrackIds},
+      };
+
+      try {
+        const response = await axios.get(GET_TRACKS_URL, payload);
+        const tracks = [];
+
+        for (let item of response.data.tracks) {
+          const artists = [];
+
+          for (let artist of item.artists) {
+            artists.push(artist.name);
+          }
+
+          tracks.push({
+            track_id: item.id,
+            title: item.name,
+            artist: artists.join(", "),
+            album: item.album.name,
+          });
+        }
+
+        setCookedSongs(tracks);
+        setShowEditor(true);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    getSongData();
+  }, [rawSongs]);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const payload = {headers: {Authorization: `Bearer ${accessToken}`}};
+
+      try {
+        const response = await axios.get(PROFILE_URL, payload);
+        setUserId(response.data.id);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    if (accessToken && !userId) {
+      fetchUserId();
+    }
+  }, [accessToken, userId]);
+
+  const loginHandler = async () => {
+    window.location.href = await getSpotifyAuthLink();
+  };
+
+  const showInputForm = () => {
+    setShowEditor(false);
+  };
+
   const sendExtractRequest = async (data) => {
-    const payload = { headers: { Authorization: `Bearer ${accessToken}` } }
+    setPlaylistName(data.playlistName);
+    setDescription(data.description);
+
+    const payload = {headers: {Authorization: `Bearer ${accessToken}`}};
+    const tracks = [];
 
     try {
-      const response = await axios.get(data.playlist, payload)
-      const tracks = []
+      const response = await axios.get(data.playlistAPI, payload);
 
       for (const item of response.data.items) {
         tracks.push(item.track.id)
@@ -219,19 +370,65 @@ const Program = () => {
       console.error(err)
     }
 
-    console.log("submit")
-  }
+    console.log("submit");
+    
+    // api call to back end
+
+    setRawSongs(tracks);
+  };
+
+  const sendCreateRequest = async (data) => {
+    const headers = {headers: {Authorization: `Bearer ${accessToken}`}};
+
+    const createPlaylistURL = CREATE_PLAYLIST_URL.replace("{user_id}", userId);
+    const createData = {
+      name: data.name,
+      description: `Collection of songs in ${playlistName} that are ${description}, carefully chosen by Playlist Curator.`,
+    };
+
+    try {
+      const createResponse = await axios.post(createPlaylistURL, createData, headers);
+      
+      let newPlaylistId = "";
+      let newPlaylistLink = "";
+      
+      if (createResponse.status == 201) {
+        const playlistResponse = await axios.get(createResponse.data.href, headers);
+
+        newPlaylistId = playlistResponse.data.id;
+        newPlaylistLink = playlistResponse.data.external_urls.spotify;
+      }
+      
+      const addToPlaylistURL = ADD_TO_PLAYLIST_URL.replace("{playlist_id}", newPlaylistId);
+      const addToData = {
+        uris: data.trackURIs,
+      };
+
+      const addResponse = await axios.post(addToPlaylistURL, addToData, headers);
+
+      if (addResponse.status == 201) {
+        alert("Playlist was successfully saved!");
+        window.location.href = newPlaylistLink;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <div className={`min-h-screen bg-black text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
-      {/* Background Effect */}
-      <Shift />
+      <Heading />
+      
       {accessToken ? (
-        <>
-          <Heading />
-          {!showEditor && <InputForm onLoginAttempt={loginHandler} onSubmit={sendExtractRequest} token={accessToken} />}
-          {showEditor && <Editor />}
-        </>
+        <div>
+          { !showEditor && <InputForm onLoginAttempt={loginHandler}
+                                      onSubmit={sendExtractRequest}
+                                      token={accessToken} /> }
+
+          { showEditor && <Editor onSubmit={sendCreateRequest}
+                                  onCancel={showInputForm}
+                                  tracks={cookedSongs} /> }
+        </div>
       ) : (
         <div className="text-center">
           <Heading />
