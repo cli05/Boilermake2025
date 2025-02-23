@@ -15,8 +15,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 // cool background import
 const { Shift } = require("ambient-cbg")
 
-// lucide-react icon imports
-import { CircleUserRound, X } from "lucide-react"
+
+// react spotify icon imports
+import { FaSpotify } from "react-icons/fa";
+
 
 // user-defined imports
 import { getSpotifyAuthLink, requestToken } from "@/app/spotify.js"
@@ -97,7 +99,9 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
                 <div key={index} className="flex items-center space-x-2 text-white">
                   <RadioGroupItem value={index} id={optionId} className="border-white text-white" />
                   <Label htmlFor={optionId} className="cursor-pointer">
-                    {item.name} <span className="text-gray-400">({item.song_count} songs)</span>
+
+                    {item.name} <span className="text-gray-400">({item.song_count} songs) </span>
+
                   </Label>
                 </div>
               )
@@ -109,23 +113,25 @@ const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
   }
 
   return (
-    <div className="flex justify-center">
-      <Button
-        variant="outline"
-        onClick={onLoginAttempt}
-        className="bg-green-500 hover:bg-green-400 text-black font-bold py-4 px-8 rounded-full flex items-center space-x-2 transition duration-300"
-      >
-        <CircleUserRound />
-        <span>Sign in to Spotify</span>
-      </Button>
-    </div>
+      <div className="flex justify-center">
+        <Button
+            variant="outline"
+            onClick={onLoginAttempt}
+            className="bg-green-500 hover:bg-green-400 text-black font-bold py-4 px-8 rounded-full flex items-center space-x-2 transition duration-300"
+        >
+          <FaSpotify style={{fontSize: "100px"}}/>
+          <span>Sign in to Spotify</span>
+        </Button>
+      </div>
   )
 } /* SpotifyAccount() */
+
 
 const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   const [playlistName, setPlaylistName] = useState<string>()
   const [playlistAPI, setPlaylistAPI] = useState<string>()
   const [description, setDescription] = useState<string>()
+
 
   const updatePlaylist = (value) => {
     setPlaylistName(value.name)
@@ -447,7 +453,7 @@ const Program = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-black text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
+    <div className={`min-h-screen bg-[#1d0f2b] text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
       {accessToken ? (
         <div>
           <Heading />
@@ -456,19 +462,21 @@ const Program = () => {
                                       onSubmit={sendExtractRequest}
                                       token={accessToken} /> }
 
-          { showEditor && <Editor onSubmit={sendCreateRequest}
+            { showEditor && <Editor onSubmit={sendCreateRequest}
                                   onCancel={showInputForm}
                                   tracks={cookedSongs} /> }
-        </div>
+          </div>
       ) : (
-        <div className="text-center">
-          <Heading />
-          <SpotifyAccount onLoginAttempt={loginHandler} onValueChange={() => {}} token={null} />
+        <div className="flex items-center justify-center">
+          <div className="bg-black p-12 rounded-lg shadow-xl max-w-lg w-full text-center">
+            <Heading />
+            <SpotifyAccount onLoginAttempt={loginHandler} onValueChange={() => {}} token={null} />
+          </div>
         </div>
       )}
     </div>
   )
-} /* Program() */
+} /* Program() Program File  */
 
 const MainPage = () => {
   return (
