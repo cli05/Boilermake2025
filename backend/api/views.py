@@ -6,7 +6,7 @@ from django.conf import settings
 
 
 @api_view(['POST'])
-def classify_text(request):
+def classify_text(request, song_list):
     text = request.data.get('text', '').strip() # input data from the api call, strip whitespace
 
     if not text: # return error 400 if no text
