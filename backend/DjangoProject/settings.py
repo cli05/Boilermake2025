@@ -189,5 +189,5 @@ KV_LABELS = {'high popularity': [42.06213858625163, 100], 'medium popularity': [
              'rock-n-roll': None, 'r-n-b': None, 'house': None, 'metalcore': None, 'dancehall': None, 'trip-hop': None, 'party': None, 
              'breakbeat': None, 'sleep': None, 'garage': None, 'techno': None, 'classical': None, 'cantopop': None, 'edm': None, 'pop': None, 'new-age': None}
 
-ZERO_SHOT_LABELS = KV_LABELS.keys()
+ZERO_SHOT_LABELS = list(KV_LABELS.keys())
 # pip install django-cors-headers
