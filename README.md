@@ -6,14 +6,14 @@ and Jeremy Moon.
 Refer to our [Devpost page]() to read about the motivations, development, and challenges
 of creating this project.
 
-### App Screenshots
+## App Screenshots
 
 ![screenshot1](Screenshots/Screenshot1.jpg)
 ![screenshot2](Screenshots/Screenshot2.jpg)
 ![screenshot3](Screenshots/Screenshot3.jpg)
 ![screenshot4](Screenshots/Screenshot4.jpg)
 
-### Project Structure
+## Project Structure
 
 **Back End (/backend):** uses natural language processing models to convert
 input text into filters, sends extracted playlist back to client.
