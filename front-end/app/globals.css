@@ -103,6 +103,25 @@
     --chart-4: 280 65% 60%;
 
     --chart-5: 340 75% 55%}
+  .loader {
+    width: 50px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 8px solid;
+    border-color: #22c55e #0000;
+    animation: l1 1s infinite;
+  }
+@keyframes l1 {to{transform: rotate(.5turn)}}
+  @-webkit-keyframes spin {
+    0% { -webkit-transform: rotate(0deg); }
+    100% { -webkit-transform: rotate(360deg); }
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
 }
 
 @layer base {

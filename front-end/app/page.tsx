@@ -189,6 +189,8 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   )
 } /* InputForm() */
 
+
+
 const Editor = ({ onSubmit, onCancel, tracks }) => {
   const [playlistName, setPlaylistName] = useState<string>("My Playlist")
   const [trackList, setTrackList] = useState<Array<string>>()
@@ -382,7 +384,10 @@ const Program = () => {
     setShowEditor(false)
   }
 
+  const [loading, setLoading] = useState(false);
+
   const sendExtractRequest = async (data) => {
+    setLoading(true);
     setPlaylistName(data.playlistName)
     setDescription(data.description)
 
@@ -412,6 +417,7 @@ const Program = () => {
     }
 
     setRawSongs(tracks)
+    setLoading(false);
   }
 
   const sendCreateRequest = async (data) => {
@@ -453,21 +459,27 @@ const Program = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-[#1d0f2b] text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
+    <div className={`bg-gradient-to-bl from-green-950 to-gray-800 min-h-screen text-white p-8 ${!accessToken ? "flex items-center justify-center" : ""}`}>
       {accessToken ? (
-        <div>
-          <Heading />
-          
-          { !showEditor && <InputForm onLoginAttempt={loginHandler}
-                                      onSubmit={sendExtractRequest}
-                                      token={accessToken} /> }
+          <div>
+            <Heading/>
 
-            { showEditor && <Editor onSubmit={sendCreateRequest}
-                                  onCancel={showInputForm}
-                                  tracks={cookedSongs} /> }
+            {!showEditor &&
+                <InputForm onLoginAttempt={loginHandler}
+                                       onSubmit={sendExtractRequest}
+                                       token={accessToken}/> }
+            {loading && (
+              <div className="flex justify-center mt-6">
+                <div className="loader"></div>
+              </div>
+              )}
+
+            {showEditor && <Editor onSubmit={sendCreateRequest}
+                                   onCancel={showInputForm}
+                                   tracks={cookedSongs}/>}
           </div>
       ) : (
-        <div className="flex items-center justify-center">
+          <div className="flex items-center justify-center">
           <div className="bg-black p-12 rounded-lg shadow-xl max-w-lg w-full text-center">
             <Heading />
             <SpotifyAccount onLoginAttempt={loginHandler} onValueChange={() => {}} token={null} />
