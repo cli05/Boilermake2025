@@ -481,7 +481,3 @@ const MainPage = () => {
 } /* MainPage() */
 
 export default MainPage
-<<<<<<< HEAD
-
-=======
->>>>>>> 7aa3d42 (8 hours to go)
