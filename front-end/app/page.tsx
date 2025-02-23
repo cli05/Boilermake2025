@@ -412,6 +412,7 @@ const Program = () => {
       const response = await axios.post("http://localhost:8000/api/classify/", classifyData);
       if (!response.data.tracks) {
         alert("No matches were found. Modify your description and try again.");
+        return;
       }
 
       setRawSongs(response.data.tracks)
@@ -494,14 +495,11 @@ const Program = () => {
 
 const MainPage = () => {
   return (
-      <div className="bg-black min-h-screen">
-        <BrowserRouter>
-          <Program/>
-        </BrowserRouter>
-        <div className="text-white text-xs text-center mt-4">
-          By Jeremy Moon, Keshav Sreekantham, Marvin Zhang, and Caleb Li
-        </div>
-      </div>
+    <div className="bg-black min-h-screen">
+      <BrowserRouter>
+        <Program />
+      </BrowserRouter>
+    </div>
   )
 } /* MainPage() */
 
