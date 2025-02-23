@@ -3,7 +3,7 @@
 Project submitted to BoilerMake XII by Caleb Li, Marvin Zhang, Keshav Sreekantham,
 and Jeremy Moon.
 
-Refer to our [Devpost page]() to read about the motivations, development, and challenges
+Refer to our [Devpost page](https://devpost.com/software/playlist-curator-75uojr?ref_content=user-portfolio&ref_feature=in_progress) to read about the motivations, development, and challenges
 of creating this project.
 
 ## App Screenshots
