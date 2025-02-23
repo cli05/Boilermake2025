@@ -406,7 +406,6 @@ const Program = () => {
 
     try {
       const response = await axios.post("http://localhost:8000/api/classify/", classifyData);
-      console.log(response)
       if (!response.data.tracks) {
         alert("No matches were found. Modify your description and try again.");
       }

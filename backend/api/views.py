@@ -16,8 +16,7 @@ def classify_text(request):
     try:
         print('checkpoint 0')
         result = generate_subplaylist(text, song_list)
-        print(result)
-        print('checkpoint >9000')
+        print('Result is ', result)
 
         return Response({
             'tracks': result
@@ -38,26 +37,24 @@ def generate_zsc_output(prompt):
 
 # First method, filters playlist according to songs that fit AT LEAST one criteria
 def generate_subplaylist(prompt, playlist):
-    print('checkpoint 0.5')
     output = generate_zsc_output(prompt)
     print(output)
-    print('checkpoint 1')
+    print('Model successfully processed prompt.')
     use_labels = [output["labels"][x] for x in range(len(output["labels"])) if output["scores"][x] > 0.95]
     final_playlist = []
     df = settings.DF
-    print('checkpoint 2')
+    print('Labels have been parsed and dataframe instantiated. 2')
     for song_id in playlist:
         row = df[df["track_id"] == song_id]
         if len(row) == 0:
             continue
 
-        print('checkpoint 3', song_id)
+        print("Current song id: ", song_id)
         for label in use_labels:
-            print('checkpoint 4')
+            print('Current label = ', label)
             label_val = settings.KV_LABELS[label]
-            print('checkpoint 5', label_val)
             if label_val is None:
-                print("label_val is none!")
+                print('Label is a genre')
                 gen_list = row['track_genre'].iloc[0].split(",")
                 found = False
                 for gen in gen_list:
@@ -67,18 +64,13 @@ def generate_subplaylist(prompt, playlist):
                             final_playlist.append(song_id)
                         break
                 if found:
-                    print('found')
                     break
             else:
-                print('entered else statement')
+                print('Label is a description')
                 ind = settings.ZERO_SHOT_LABELS.index(label)
-                print('checkpoint 6')
                 col = settings.FEATURES[ind // 3]
-                print('checkpoint 7')
                 min = label_val[0]
-                print('checkpoint 8')
                 max = label_val[1]
-                print('checkpoint 9')
                 if row[col].iloc[0] <= max and row[col].iloc[0] >= min:
                     if song_id not in final_playlist:
                         final_playlist.append(song_id)
