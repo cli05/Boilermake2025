@@ -16,10 +16,10 @@ def classify_text(request):
     try:
         print('checkpoint 0')
         result = generate_subplaylist(text, song_list)
-        print('checkpoint >9000')
+        print('Result is ', result)
 
         return Response({
-            result
+            'tracks': result
         })
 
     except Exception as e:
@@ -28,65 +28,34 @@ def classify_text(request):
 def generate_zsc_output(prompt):
     classes_verbalized = settings.ZERO_SHOT_LABELS
     zeroshot_classifier = settings.ZERO_SHOT_PIPELINE
-    print(zeroshot_classifier)
-    output = zeroshot_classifier(prompt, classes_verbalized, multi_label=True)
-    print(output)
+    print(classes_verbalized, zeroshot_classifier)
+    try:
+        output = zeroshot_classifier(prompt, classes_verbalized, multi_label=True)
+    except Exception as e:
+        print(e)
     return output
 
 # First method, filters playlist according to songs that fit AT LEAST one criteria
 def generate_subplaylist(prompt, playlist):
-    print('checkpoint 0.5')
     output = generate_zsc_output(prompt)
+    print(output)
+    print('Model successfully processed prompt.')
     use_labels = [output["labels"][x] for x in range(len(output["labels"])) if output["scores"][x] > 0.95]
     final_playlist = []
-    print('checkpoint 1')
-    for label in use_labels:
-        label_val = settings.KV_LABELS[label]
-        col = None 
-        print('checkpoint 2', label)
-        if label_val is None:
-            #if the label is a genre
-            col = "track_genre"
-        else:
-            #if label is any other category
-            ind = settings.ZERO_SHOT_LABELS.index(label)
-            col = settings.FEATURES[ind // 3]
-        print('checkpoint 3', label)
-        for song_id in playlist:
-            row = df[df["track_id"] == song_id]
-            if not len(row):
-                if song_id not in final_playlist:
-                    final_playlist.append(song_id)
-                    continue
-
-            print('checkpoint 4', label, song_id)
-            if (col == "track_genre"):
-                gen_list = row[col].iloc[0].split(",")
-                for gen in gen_list:
-                    if gen == label:
-                        if song_id not in final_playlist:
-                            final_playlist.append(song_id)
-            else:
-                min = label_val[0]
-                max = label_val[1]
-                if row[col].iloc[0] <= max and row[col].iloc[0] >= min:
-                    if song_id not in final_playlist:
-                        final_playlist.append(song_id)
-
-            print('checkpoint 5', label, song_id)
-    return final_playlist
-
-# Second method, filters playlist according to songs that fit ALL criteria
-def generate_subplaylist2(prompt, playlist):
-    output = generate_zsc_output(prompt)
-    use_labels = [output["labels"][x] for x in range(len(output["labels"])) if output["scores"][x] > 0.97]
     df = settings.DF
+    print('Labels have been parsed and dataframe instantiated. 2')
     for song_id in playlist:
         row = df[df["track_id"] == song_id]
+        if len(row) == 0:
+            continue
+
+        print("Current song id: ", song_id)
         for label in use_labels:
+            print('Current label = ', label)
             label_val = settings.KV_LABELS[label]
             if label_val is None:
-                gen_list = row[col].iloc[0].split(",")
+                print('Label is a genre')
+                gen_list = row['track_genre'].iloc[0].split(",")
                 found = False
                 for gen in gen_list:
                     if gen == label:
@@ -97,6 +66,7 @@ def generate_subplaylist2(prompt, playlist):
                 if found:
                     break
             else:
+                print('Label is a description')
                 ind = settings.ZERO_SHOT_LABELS.index(label)
                 col = settings.FEATURES[ind // 3]
                 min = label_val[0]
@@ -105,5 +75,5 @@ def generate_subplaylist2(prompt, playlist):
                     if song_id not in final_playlist:
                         final_playlist.append(song_id)
                     break
-                
+
     return final_playlist

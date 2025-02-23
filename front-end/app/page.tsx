@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 // cool background import
 const { Shift } = require("ambient-cbg")
 
+import { X } from "lucide-react";
 
 // react spotify icon imports
 import { FaSpotify } from "react-icons/fa";
@@ -188,8 +189,6 @@ const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
     </div>
   )
 } /* InputForm() */
-
-
 
 const Editor = ({ onSubmit, onCancel, tracks }) => {
   const [playlistName, setPlaylistName] = useState<string>("My Playlist")
@@ -411,12 +410,15 @@ const Program = () => {
 
     try {
       const response = await axios.post("http://localhost:8000/api/classify/", classifyData);
-      console.log(response);
+      if (!response.data.tracks) {
+        alert("No matches were found. Modify your description and try again.");
+      }
+
+      setRawSongs(response.data.tracks)
     } catch (err) {
       console.error(err);
     }
 
-    setRawSongs(tracks)
     setLoading(false);
   }
 
