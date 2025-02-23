@@ -15,12 +15,24 @@ import { Input } from "@/components/ui/input";
 import { CircleUserRound } from "lucide-react";
 
 // user-defined imports
-import { loginToSpotify, requestToken } from "@/app/spotify.js";
+import { getSpotifyAuthLink, requestToken } from "@/app/spotify.js";
 import "@/app/globals.css";
 
-// TODO: handle regenerating access tokens
+const PROFILE_URL = "https://api.spotify.com/v1/me";
+const GET_PLAYLISTS_URL = "https://api.spotify.com/v1/me/playlists";
 
-const SpotifyAccount = ({ onDataChange, onTokenReceived }) => {
+const MAX_DESC_LEN = 50;
+
+const Heading = () => {
+  return (
+    <div>
+      <h1 className="font-black text-2xl text-center">Playlist Curator</h1>
+      <p>Lorem ipsum dolor si amet.</p>
+    </div>
+  );
+}; /* Heading() */
+
+const SpotifyAccount = ({ onLoginAttempt, onValueChange, token }) => {
   interface Playlist {
     name: string;
     song_count: number;
@@ -28,64 +40,36 @@ const SpotifyAccount = ({ onDataChange, onTokenReceived }) => {
     tracks: Array<string>;
   };
 
-  const [params, setParams] = useSearchParams();
-  const [token, setToken] = useState<string>();
-
   const [username, setUsername] = useState<string>();
   const [playlists, setPlaylists] = useState<Array<Playlist>>();
 
-  const [loaded, setLoaded] = useState<boolean>(false);
-
-  useEffect(() => {
-    const fetchToken = async () => {
-      let code = params.get("code");
-
-      if (code) {
-        const tokenData = await requestToken(code);
-        setToken(tokenData.access_token);
-        onTokenReceived(tokenData.access_token);
-      }
-    };
-
-    fetchToken();
-  }, []);
+  const [showPlaylists, setShowPlaylists] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const profileURL = "https://api.spotify.com/v1/me";
       const payload = {headers: {Authorization: `Bearer ${token}`}};
 
       try {
-        const response = await axios.get(profileURL, payload);
-        setUsername(response.data.display_name);
-      } catch (err) {
-        console.error(err);
-      }
-
-      const playlistsURL = "https://api.spotify.com/v1/me/playlists";
-
-      try {
-        const response = await axios.get(playlistsURL, payload);
-
-        const items = response.data.items;
+        const profileResponse = await axios.get(PROFILE_URL, payload);
+        setUsername(profileResponse.data.display_name);
+        
+        const playlistsResponse = await axios.get(GET_PLAYLISTS_URL, payload);
         let list = [];
 
-        for (let i = 0; i < items.length; i++) {
+        for (let item of playlistsResponse.data.items) {
           list.push({
-            name: items[i].name,
-            song_count: items[i].tracks.total,
-            api_endpoint: items[i].tracks.href,
+            name: item.name,
+            song_count: item.tracks.total,
+            api_endpoint: item.tracks.href,
             tracks: [],
           });
         }
 
         setPlaylists(list);
-        console.log(list);
+        setShowPlaylists(true);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
-
-      setLoaded(true);
     };
 
     if (token) {
@@ -93,18 +77,18 @@ const SpotifyAccount = ({ onDataChange, onTokenReceived }) => {
     }
   }, [token]);
 
-  if (loaded) {
+  if (showPlaylists) {
     return (
       <div>
         <p>Signed in as {username}</p>
-        <RadioGroup onValueChange={(value) => onDataChange(value)}>
+        <RadioGroup onValueChange={(value) => onValueChange(value)}>
           {playlists.map((item, index) => {
-            const option = "playlist" + index;
+            const optionId = "playlist" + index;
 
             return (
               <div key={index}>
-                <RadioGroupItem value={item.api_endpoint} id={option} />
-                <Label htmlFor={option}>{item.name} ({item.song_count} songs)</Label>
+                <RadioGroupItem value={item.api_endpoint} id={optionId} />
+                <Label htmlFor={optionId}>{item.name} ({item.song_count} songs)</Label>
               </div>
             );
           })}
@@ -116,67 +100,126 @@ const SpotifyAccount = ({ onDataChange, onTokenReceived }) => {
   return (
     <div>
       <Button variant="spotify"
-              onClick={loginToSpotify}
+              onClick={onLoginAttempt}
               className="m-auto text-xl w-5xl p-8">
         <CircleUserRound />
         Sign in to Spotify
       </Button>
     </div>
   );
-};
+}; /* SpotifyAccount() */
 
-const MainPage = () => {
-  const [token, setToken] = useState<string>();
-
+const InputForm = ({ onLoginAttempt, onSubmit, token }) => {
   const [playlist, setPlaylist] = useState<string>();
   const [description, setDescription] = useState<string>();
 
-  const sendExtractRequest = async () => {
-    // input validation
-    if (!playlist) {
-      console.log("playlist cannot be null");
+  const updatePlaylist = (value) => {
+    setPlaylist(value);
+  };
+
+  const updateDescription = (event) => {
+    setDescription(event.target.value);
+  };
+
+  const extractButtonHandler = (event) => {
+    if (!playlist || !description) {
+      console.log("All fields are required");
       return;
     }
 
-    if (!description) {
-      console.log("description cannot be empty");
+    if (description.length > MAX_DESC_LEN) {
+      console.log("Description is too long");
       return;
     }
 
-    const payload = {headers: {Authorization: `Bearer ${token}`}};
+    const data = { playlist, description };
+    onSubmit(data);
+  };
+
+  return (
+    <div>
+      <SpotifyAccount onLoginAttempt={onLoginAttempt}
+                      onValueChange={updatePlaylist}
+                      token={token} />
+
+      <Label htmlFor="description">I want all the songs that are...</Label>
+      <Input id="description"
+             name="description"
+             placeholder="happy" 
+             onChange={(e) => setDescription(e.target.value)} />
+
+      <Button onClick={extractButtonHandler}>Extract</Button>
+    </div>
+  );
+}; /* InputForm() */
+
+const Editor = () => {
+  return (<div>what</div>);
+}; /* Editor() */
+
+const Program = () => {
+  const [params, setParams] = useSearchParams();
+  
+  const [accessToken, setAccessToken] = useState<string>();
+  const [refreshToken, setRefreshToken] = useState<string>();
+
+  const [showEditor, setShowEditor] = useState<boolean>(false);
+
+  const loginHandler = async () => {
+    window.location.href = await getSpotifyAuthLink();
+  };
+
+  useEffect(() => {
+    const fetchToken = async () => {
+      let code = params.get("code");
+      
+      if (code) {
+        const data = await requestToken(code);
+        setAccessToken(data.access_token);
+        setRefreshToken(data.refresh_token);
+      }
+    };
+
+    fetchToken();
+  }, []);
+
+  const sendExtractRequest = async (data) => {
+    const payload = {headers: {Authorization: `Bearer ${accessToken}`}};
 
     try {
-      const response = await axios.get(playlist, payload);
+      const response = await axios.get(data.playlist, payload);
       const tracks = [];
 
       for (let item of response.data.items) {
         tracks.push(item.track.id);
       }
-
-      console.log(tracks);
     } catch (err) {
       console.error(err);
     }
 
     console.log("submit");
-    // send tracks and description to backend api
   };
 
   return (
-    <BrowserRouter>
-      <div className="flex flex-col m-auto w-2xl">
-        <h1 className="font-black text-2xl text-center">Playlist Curator</h1>
-        <SpotifyAccount onDataChange={(data) => setPlaylist(data)}
-                        onTokenReceived={(data) => setToken(data)} />
+    <div>
+      <Heading />
 
-        <p>I want all the songs that are...</p>
-        <Input placeholder="happy" name="description"
-               onChange={(e) => setDescription(e.target.value)} />
-
-        <Button onClick={sendExtractRequest}>Extract</Button>
-      </div>
-    </BrowserRouter>
+      { !showEditor && <InputForm onLoginAttempt={loginHandler}
+                                  onSubmit={sendExtractRequest}
+                                  token={accessToken} /> }
+      { showEditor && <Editor /> }
+    </div>
   );
-};
+}; /* Program() */
+
+const MainPage = () => {
+  return (
+    <div>
+      <BrowserRouter>
+        <Program />
+      </BrowserRouter>
+    </div>
+  );
+}; /* MainPage() */
 
 export default MainPage;

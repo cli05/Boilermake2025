@@ -28,7 +28,7 @@ const generateCodeChallenge = async (verifier) => {
   const encoder = new TextEncoder();
   const encoded = encoder.encode(verifier);
   
-  const hashBuffer = await window.crypto.subtle.digest("SHA-256", encoded);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashText = String.fromCharCode(...hashArray);
 
@@ -39,11 +39,11 @@ const generateCodeChallenge = async (verifier) => {
   return base64Encoded;
 };
 
-export const loginToSpotify = async () => {
+export const getSpotifyAuthLink = async () => {
   const verifier = generateCodeVerifier(VERIFIER_LEN);
   const challenge = await generateCodeChallenge(verifier);
 
-  window.localStorage.setItem("code_verifier", verifier);
+  localStorage.setItem("code_verifier", verifier);
 
   const params = {
     response_type: "code",
@@ -56,8 +56,8 @@ export const loginToSpotify = async () => {
 
   const url = new URL(AUTH_URL);
   url.search = new URLSearchParams(params).toString();
-  
-  window.location.href = url.toString();
+
+  return url.toString();
 };
 
 export const requestToken = async (code) => {
