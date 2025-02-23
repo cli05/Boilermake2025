@@ -494,11 +494,14 @@ const Program = () => {
 
 const MainPage = () => {
   return (
-    <div className="bg-black min-h-screen">
-      <BrowserRouter>
-        <Program />
-      </BrowserRouter>
-    </div>
+      <div className="bg-black min-h-screen">
+        <BrowserRouter>
+          <Program/>
+        </BrowserRouter>
+        <div className="text-white text-xs text-center mt-4">
+          By Jeremy Moon, Keshav Sreekantham, Marvin Zhang, and Caleb Li
+        </div>
+      </div>
   )
 } /* MainPage() */
 
