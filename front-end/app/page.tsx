@@ -15,6 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 // cool background import
 const { Shift } = require("ambient-cbg")
 
+import { X } from "lucide-react";
 
 // react spotify icon imports
 import { FaSpotify } from "react-icons/fa";
