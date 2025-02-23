@@ -29,7 +29,7 @@ def generate_zsc_output(prompt):
     return output
 
 # First method, filters playlist according to songs that fit AT LEAST one criteria
-def generate_subplaylist3(prompt, playlist):
+def generate_subplaylist(prompt, playlist):
     output = generate_zsc_output(prompt)
     use_labels = [output["labels"][x] for x in range(len(output["labels"])) if output["scores"][x] > 0.95]
     final_playlist = []
